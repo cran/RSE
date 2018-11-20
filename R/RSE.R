@@ -118,14 +118,13 @@ Pred.Fk.BW = function(f,m,b,k.show=3){
   d = ind/n*(1-b[1]*exp(-b[2]*ind))
   
   for(i in 1:k.show){## i for k
-    for(j in 1:min(i,kmax)){## j for q
+     tmp = prod(1+n/(m-(0:(i-1))))
+     for(j in 1:min(i,kmax)){## j for q
       # est.f[i] = est.f[i] +
       #   f[j]*choose(m,i)/(choose(m+n,i)-choose(m,i))*
       #   dbinom(i-j,m,d[j]);
-      
-      tmp = prod(1+n/(m-(0:(i-1))))
-      est.f[i] = est.f[i] +
-        f[j]*1/(tmp-1)*dbinom(i-j,m,d[j]);
+       
+      est.f[i] = est.f[i]+f[j]*1/(tmp-1)*dbinom(i-j,m,d[j]);
     }
   }
   
@@ -188,7 +187,10 @@ Pred.Fk.unweighted = function(f,m,b,f0, k.show=3){
     f1 = f[1]
     f2 = f[2]
   }
-  d0 = f1 / n * ((n-1)*f1 / ((n-1)*f1 + 2*max(f2,1)))/f0
+  if(f0>0) {d0 = f1 / n * ((n-1)*f1 / ((n-1)*f1 + 2*max(f2,1)))/f0
+    } else {
+      d0=0
+    }
   
 
   ### relative abundance estimation by Chao et al. (2015)
@@ -201,7 +203,8 @@ Pred.Fk.unweighted = function(f,m,b,f0, k.show=3){
   #     );
   #   est.f[k] = est.f[k] + choose(m,k)*f0*d0^k*(1-d0)^(n+m-k)
 
-    est.f[k] = sum(f*dbinom(k,m,d)*(1-d)^n)+f0*dbinom(k,m,d0)*(1-d0)^n;
+    est.f[k] = sum(f*dbinom(k,m,d)*(1-d)^n)
+    if(f0>0) est.f[k] = est.f[k]+f0*dbinom(k,m,d0)*(1-d0)^n;
   }# loop: k
   
   return(est.f)
@@ -255,10 +258,9 @@ Pred.abundance.rare = function(boot.rep = 100,f=NULL,xi=NULL,m,k.show = 3){
     b.pred.fk.BW = Pred.Fk.BW(b.f, m, b=b.a.p.1)
     
     b.pred.fk.unweighted = Pred.Fk.unweighted(b.f, m, b=b.a.p.1, b.est.f0)
-    
+
     boot.output = rbind(boot.output,c(proposed=b.pred.fk.BW[1:k.show], naive=b.naive[1:k.show], unweighted=b.pred.fk.unweighted[1:k.show]))
   }### loop: boot.rep
-  
   point.est = cbind(proposed=est.R,naive=est.Naive,unweighted=est.R2)
   boot.sd = apply(boot.output, 2, sd, na.rm=T)
   boot.sd = matrix(boot.sd, ncol=3)
@@ -346,7 +348,7 @@ Pred.Qk.unweighted = function(Q,nT,u,b,Q0,k.show = 3){
     f1 = f[1]
     f2 = f[2]
   }
-  d0 = f1 / n * ((n-1)*f1 / ((n-1)*f1 + 2*max(f2,1)))/Q0
+  if(Q0>0) d0 = f1 / n * ((n-1)*f1 / ((n-1)*f1 + 2*max(f2,1)))/f0
 
   ### relative abundance estimation by Chao et al. (2015)
   ind = 1:kmax
@@ -356,7 +358,8 @@ Pred.Qk.unweighted = function(Q,nT,u,b,Q0,k.show = 3){
     # est.f[k] = choose(m,k)*sum(f*d^k*(1-d)^(n+m-k));
     # est.f[k] = est.f[k] + choose(m,k)*f0*d0^k*(1-d0)^(n+m-k)
 
-    est.f[k] = sum(f*dbinom(k,m,d)*(1-d)^n)+f0*dbinom(k,m,d0)*(1-d0)^n;
+    est.f[k] = sum(f*dbinom(k,m,d)*(1-d)^n)
+    if(f0>0) est.f[k] = est.f[k]+f0*dbinom(k,m,d0)*(1-d0)^n;
   }# loop: k
   
   return(est.f)
